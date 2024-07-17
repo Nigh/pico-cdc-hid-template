@@ -70,11 +70,12 @@ void hid_receive(uint8_t const* buffer, uint16_t bufsize) {
 	// print first 32 bytes
 	LOG_RAW("HID[%d]:%s\n", bufsize, str);
 
+	uint8_t echo[64];
 	// echo back with every byte + 1
 	for (uint16_t i = 0; i < bufsize; i++) {
-		buffer[i] += 1;
+		echo[i] = buffer[i] + 1;
 	}
-	hid_send(buffer, bufsize);
+	hid_send(echo, bufsize);
 }
 
 static char serial_fifo[16];
