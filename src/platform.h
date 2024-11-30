@@ -8,10 +8,10 @@
 #include "scheduler/uevent.h"
 
 #if G_LOG_ENABLED == 1
-char log_cache[128];
-char log_buffer[512];
-uint16_t log_ptr;
-int16_t log_length;
+extern char log_cache[128];
+extern char log_buffer[512];
+extern uint16_t log_ptr;
+extern int16_t log_length;
 	#define LOG_RAW(...) \
 		do { \
 			log_length = sprintf(log_cache, __VA_ARGS__) + 1; \
