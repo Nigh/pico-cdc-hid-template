@@ -27,6 +27,8 @@ extern int16_t log_length;
 #else
 	#define LOG_RAW(...)
 #endif
+#include <stdarg.h>
+void remote_log(const char* format, ...);
 
 typedef union {
 	uint8_t raw[64];
