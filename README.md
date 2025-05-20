@@ -6,20 +6,10 @@ rpi pico USB CDC+HID template
 
 ## Prepare
 
-### Get pico SDK
+### Get docker
 
 ```shell
-git clone https://github.com/raspberrypi/pico-sdk --depth=1 --recurse-submodules --shallow-submodules -j8
-cd pico-sdk
-
-## Add pico-sdk Path to your environment
-echo export PICO_SDK_PATH=$PWD >> ~/.profile
-```
-
-### Install dependencies
-
-```shell
-sudo apt update && sudo apt install -y cmake make ninja-build gcc g++ openssl libssl-dev cmake gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib clang-format
+docker pull xianii/pico-sdk:latest
 ```
 
 ### build
