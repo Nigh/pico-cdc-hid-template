@@ -21,5 +21,5 @@ format:
 .PHONY: docker_build
 docker_build:
 	docker run --rm \
-	-v ${PWD}:/pico-src \
+	-v ${PWD}:/workspace \
 	xianii/pico-sdk:latest /bin/bash -c "cd pico-src && cmake . -G Ninja -Bbuild -S. && ninja -C build"
