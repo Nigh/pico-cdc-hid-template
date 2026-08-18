@@ -1,6 +1,7 @@
 
 #include "pico/stdlib.h"
 #include "hardware/sync.h"
+#include <string.h>
 
 #include "scheduler/uevent.h"
 #include "scheduler/scheduler.h"
@@ -26,7 +27,8 @@ static __inline void CRITICAL_REGION_EXIT(void) {
 }
 
 bool timer_4hz_callback(struct repeating_timer* t) {
-	LOG_RAW("At %lld us:\n", time_us_64());
+	(void)t;
+	// IRQ: only queue the event — never touch TinyUSB / LOG_RAW here.
 	uevt_bc_e(UEVT_TIMER_4HZ);
 	return true;
 }
@@ -67,38 +69,39 @@ void hid_receive(uint8_t const* buffer, uint16_t bufsize) {
 		str[i * 2] = printHex[buffer[i] >> 4];
 		str[i * 2 + 1] = printHex[buffer[i] & 0xF];
 	}
-	// print first 32 bytes
 	LOG_RAW("HID[%d]:%s\n", bufsize, str);
 
 	uint8_t echo[64];
-	// echo back with every byte + 1
-	for (uint16_t i = 0; i < bufsize; i++) {
+	for(uint16_t i = 0; i < bufsize; i++)
 		echo[i] = buffer[i] + 1;
-	}
 	hid_send(echo, bufsize);
 }
 
-static char serial_fifo[16];
-static uint8_t serial_wp = 0;
-uint8_t serial_got(const char* str) {
-	uint8_t len = strlen(str);
-	for(uint8_t i = 1; i <= len; i++) {
-		if(serial_fifo[serial_wp + (0x10 - i) & 0xF] != str[len - i]) {
-			return 0;
-		}
+static char serial_line[40];
+static uint8_t serial_line_len;
+
+static void serial_handle_line(const char* line) {
+	if(strcmp(line, "UPLOAD") == 0) {
+		ws2812_setpixel(U32RGB(20, 0, 20));
+		reset_usb_boot(0, 0);
 	}
-	return 1;
 }
+
 void serial_receive(uint8_t const* buffer, uint16_t bufsize) {
 	for(uint16_t i = 0; i < bufsize; i++) {
-		if((*buffer == 0x0A) || (*buffer == 0x0D)) {
-			if(serial_got("UPLOAD")) {
-				ws2812_setpixel(U32RGB(20, 0, 20));
-				reset_usb_boot(0, 0);
+		uint8_t c = buffer[i];
+		if(c == '\n' || c == '\r') {
+			if(serial_line_len > 0) {
+				serial_line[serial_line_len] = 0;
+				serial_handle_line(serial_line);
+				serial_line_len = 0;
 			}
-		} else {
-			serial_fifo[serial_wp++ & 0xF] = *buffer++;
+			continue;
 		}
+		if(serial_line_len + 1u < sizeof(serial_line))
+			serial_line[serial_line_len++] = (char)c;
+		else
+			serial_line_len = 0;
 	}
 }
 
@@ -117,6 +120,7 @@ int main() {
 	add_repeating_timer_us(249978ul, timer_4hz_callback, NULL, &timer);
 	tusb_init();
 	cdc_log_init();
+	LOG_RAW("idle: UPLOAD + newline\n");
 	while(true) {
 		app_sched_execute();
 		tud_task();
