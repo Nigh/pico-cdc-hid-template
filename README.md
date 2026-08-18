@@ -1,5 +1,4 @@
 # pico USB CDC+HID template
-rpi pico USB CDC+HID template
 
 `PID=0x4005`
 `VID=0xACDC`
@@ -15,18 +14,18 @@ docker pull xianii/pico-sdk:latest
 ### build
 
 ```shell
-# build
+# build (docker, files owned by your user)
 make
-# clang-format
+# remove root-owned build/ from earlier docker runs
+make docker_clean
+# or: make clean  (falls back to docker_clean if build/ is not writable)
 make format
-# clear build
-make clean
-# rebuild
 make rebuild
 ```
 
 ## Usage
 
-- Pico will enumerate two USB devices, specifically a `CDC` device and an `HID` device. 
-- The log will be printed out via the `CDC` serial port. 
-- Any data frame written to the `HID` device will be printed out from the `CDC` serial port, and the `HID` will also return a data frame with each byte incremented by 1.
+- Pico enumerates CDC and HID.
+- Logs go out CDC via a 1 KB ring drained in the main loop (timer IRQ never writes USB).
+- CDC `UPLOAD` + newline reboots to UF2 bootloader.
+- Any HID OUT report is logged on CDC and echoed back with each byte incremented by 1.
